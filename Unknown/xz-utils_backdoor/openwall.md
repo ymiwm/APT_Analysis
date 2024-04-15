@@ -1,4 +1,9 @@
 # Openwall post by Andres Freund
+
+[Original link](https://www.openwall.com/lists/oss-security/2024/03/29/4)
+
+---
+
 Date: Fri, 29 Mar 2024 08:51:26 -0700  
 From: Andres Freund <andres@...razel.de>  
 To: oss-security@...ts.openwall.com  

@@ -1,5 +1,9 @@
 # Openwall post by Andres Freund
 
+[Original link](https://www.openwall.com/lists/oss-security/2024/03/29/4)
+
+---
+
 ### 알림
 - 번역에 틀린 표현이 있을 수 있습니다.  
 - 번역하기 애매하거나 모호한 내용은 영어 발음을 그대로 빌려 한글로 적었습니다.  
