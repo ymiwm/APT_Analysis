@@ -1,6 +1,6 @@
 # xz-utils backdoor(CVE-2024-0394)
 
-Last Modified: 2024.04.22(Thur)
+Last Modified: 2024.04.22(Mon)
 
 ## Overview
 1. [Information](#1-information)
@@ -42,25 +42,28 @@ All infrastructure that using **linux based x86_64 architecture**.
 
 ## 3. Impact
 
+Impact
 
 
 ## 4. Procedures
 
-**Set up**
+### 4-1. Set up
 - `configure.ac`
 - `CMakeLists.txt`
 - `projects/xz/builds.sh`
+- `src/liblzma/check/crc_x86_clmul.h`
 
 <br>
 
-**Exploit**
+### 4-2. Exploit
 1. `m4/build-to-host.m4`
 2. `test/files/bad-3-corrupt_lzma.xz`
 3. `test/files/good-large_compressed.lzma`
+4. `.libs/liblzma_la-crc64_fast.o`
 
 <br>
 
-**Inject**
+### 4-3. Inject
 1. `src/liblzma/Makefile`
 2. `libtool`
 3. `src/liblzma/check/crc64_fast.c`
@@ -89,4 +92,4 @@ All infrastructure that using **linux based x86_64 architecture**.
 11. [amlweems - xzbot](https://github.com/amlweems/xzbot)
 
 ---
-[Go to top](#xz-utilscve-2024-0394)
+[Go to top](#xz-utils-backdoorcve-2024-0394)
