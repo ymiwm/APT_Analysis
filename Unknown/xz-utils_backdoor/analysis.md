@@ -420,8 +420,8 @@ am__test_dir = $(top_srcdir)/tests/files/$(am__test)
 ```sh
         sed -i "s/$O/$C/g" libtool || true
 ```
-- libtool `pic_flag=" -fPIC -DPIC"` changes
-- To libtool `pic_flag=" -fPIC -DPIC -fno-lto -ffunction-sections -fdata-sections"`
+- In libtool, `pic_flag=" -fPIC -DPIC"` changes
+- To `pic_flag=" -fPIC -DPIC -fno-lto -ffunction-sections -fdata-sections"`
 - Disable linker optimizations that could get in the way of subterfuge.
 - `O="^pic_flag=\" -fPIC -DPIC\"$"`
 - `P="-fPIC -DPIC -fno-lto -ffunction-sections -fdata-sections"`
