@@ -1,4 +1,6 @@
-# 0 "$top_srcdir/src/liblzma/check/crc64_fast.c" // Injected
+// Ctrl + F -> Injected
+
+# 0 "$top_srcdir/src/liblzma/check/crc64_fast.c" //////// Injected ////////
 // SPDX-License-Identifier: 0BSD
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -123,8 +125,8 @@ lzma_resolver_attributes
 static crc64_func_type
 crc64_resolve(void)
 {
-	// return is_arch_extension_supported() // Deleted
-	return _is_arch_extension_supported() // Injected
+	// return is_arch_extension_supported() //////// Deleted ////////
+	return _is_arch_extension_supported() //////// Injected ////////
 			? &crc64_arch_optimized : &crc64_generic;
 }
 
