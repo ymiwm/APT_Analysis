@@ -1,3 +1,4 @@
+# 0 "$top_srcdir/src/liblzma/check/crc64_fast.c" // Injected
 // SPDX-License-Identifier: 0BSD
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -16,8 +17,28 @@
 #if defined(CRC_X86_CLMUL)
 #	define BUILDING_CRC64_CLMUL
 #	include "crc_x86_clmul.h"
+// ======== Injected(Start) ========
 #endif
 
+#if defined(CRC32_GENERIC)\
+&& defined(CRC64_GENERIC)\
+&& defined(CRC_X86_CLMUL)\
+&& defined(CRC_USE_IFUNC)\
+&& defined(PIC)\
+&& (defined(BUILDING_CRC64_CLMUL) || defined(BUILDING_CRC32_CLMUL))
+extern int _get_cpuid(int, void*, void*, void*, void*, void*);
+static inline bool _is_arch_extension_supported(void)
+{
+	int success = 1;
+	uint32_t r[4];
+	success = _get_cpuid(1, &r[0], &r[1], &r[2], &r[3], ((char*) __builtin_frame_address(0))-16);
+	const uint32_t ecx_mask = (1 << 1) | (1 << 9) | (1 << 19);
+	return success && (r[2] & ecx_mask) == ecx_mask;
+}
+#else
+#define _is_arch_extension_supported is_arch_extension_supported
+// ======== Injected(End) ========
+#endif
 
 #ifdef CRC64_GENERIC
 
@@ -102,7 +123,8 @@ lzma_resolver_attributes
 static crc64_func_type
 crc64_resolve(void)
 {
-	return is_arch_extension_supported()
+	// return is_arch_extension_supported() // Deleted
+	return _is_arch_extension_supported() // Injected
 			? &crc64_arch_optimized : &crc64_generic;
 }
 
